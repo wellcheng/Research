@@ -1287,6 +1287,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}] setNameWithFormat:@"[%@] -dematerialize", self.name];
 }
 
+// not 其实就是对所有的 BOOL 取反，不过要求必须是 NSNumber
 - (RACSignal *)not {
 	return [[self map:^(NSNumber *value) {
 		NSCAssert([value isKindOfClass:NSNumber.class], @"-not must only be used on a signal of NSNumbers. Instead, got: %@", value);
@@ -1295,6 +1296,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}] setNameWithFormat:@"[%@] -not", self.name];
 }
 
+// and 要求都是 tuple ，然后对 tuple 内部进行 and 操作
 - (RACSignal *)and {
 	return [[self map:^(RACTuple *tuple) {
 		NSCAssert([tuple isKindOfClass:RACTuple.class], @"-and must only be used on a signal of RACTuples of NSNumbers. Instead, received: %@", tuple);
@@ -1308,6 +1310,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}] setNameWithFormat:@"[%@] -and", self.name];
 }
 
+// or 与 and 相反，只要 tuple 中的一个是 YES 就行
 - (RACSignal *)or {
 	return [[self map:^(RACTuple *tuple) {
 		NSCAssert([tuple isKindOfClass:RACTuple.class], @"-or must only be used on a signal of RACTuples of NSNumbers. Instead, received: %@", tuple);
