@@ -107,6 +107,7 @@
 	}] setNameWithFormat:@"[%@] -map:", self.name];
 }
 
+// Map replace 其实就是 map 的变种，对 self 的 value 进行 map，全部替换为 object
 - (__kindof RACStream *)mapReplace:(id)object {
 	return [[self map:^(id _) {
 		return object;
