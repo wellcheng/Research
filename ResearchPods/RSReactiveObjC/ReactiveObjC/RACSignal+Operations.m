@@ -1247,8 +1247,12 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}] setNameWithFormat:@"[%@] -ignoreValues", self.name];
 }
 
+// 订阅自己，将 value、error、complte 都包装为 event
 - (RACSignal *)materialize {
+    // 还是创建新的 signal
 	return [[RACSignal createSignal:^(id<RACSubscriber> subscriber) {
+        // 订阅自己，将 value、error、complte 都包装为 event
+        // 这样就保证 materialize 后只有 onNext 事件
 		return [self subscribeNext:^(id x) {
 			[subscriber sendNext:[RACEvent eventWithValue:x]];
 		} error:^(NSError *error) {
