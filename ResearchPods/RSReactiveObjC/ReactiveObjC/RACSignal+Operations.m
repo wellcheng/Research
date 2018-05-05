@@ -1092,6 +1092,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}] setNameWithFormat:@"[%@] -deliverOnMainThread", self.name];
 }
 
+// 信号分组，根据 keyBlock 把 value 分成多个组，return signal 发出的事件是一个信号，这个信号是一个组一个信号
 - (RACSignal *)groupBy:(id<NSCopying> (^)(id object))keyBlock transform:(id (^)(id object))transformBlock {
 	NSCParameterAssert(keyBlock != NULL);
 
@@ -1100,31 +1101,36 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 		NSMutableArray *orderedGroups = [NSMutableArray array];
 
 		return [self subscribeNext:^(id x) {
+            // 订阅自己的 values，得到 key
 			id<NSCopying> key = keyBlock(x);
 			RACGroupedSignal *groupSubject = nil;
 			@synchronized(groups) {
+                // 获取 group 中这个 key 对应的 groupSubject
 				groupSubject = groups[key];
 				if (groupSubject == nil) {
+                    // 如果没有，就创建一个新的 groupSubject，其实就是一个热信号
 					groupSubject = [RACGroupedSignal signalWithKey:key];
 					groups[key] = groupSubject;
 					[orderedGroups addObject:groupSubject];
+                    // 发现新的 groupSubject 都需要传递出去
 					[subscriber sendNext:groupSubject];
 				}
 			}
-
+            // 让热信号发出事件，需要 transform 的就先 transform，不然就直接发出去
 			[groupSubject sendNext:transformBlock != NULL ? transformBlock(x) : x];
 		} error:^(NSError *error) {
 			[subscriber sendError:error];
-
+            // 如果 self 原始信号出错了，那么给所有的 group 热信号发送 error
 			[orderedGroups makeObjectsPerformSelector:@selector(sendError:) withObject:error];
 		} completed:^{
 			[subscriber sendCompleted];
-
+            // 同样，完成就大家都完成
 			[orderedGroups makeObjectsPerformSelector:@selector(sendCompleted)];
 		}];
 	}] setNameWithFormat:@"[%@] -groupBy:transform:", self.name];
 }
 
+// 不需要 transform 的 group
 - (RACSignal *)groupBy:(id<NSCopying> (^)(id object))keyBlock {
 	return [[self groupBy:keyBlock transform:nil] setNameWithFormat:@"[%@] -groupBy:", self.name];
 }
