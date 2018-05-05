@@ -209,16 +209,19 @@
         return compoundDisposable;
     }] setNameWithFormat:@"[%@] -bind:", self.name];
 }
-
+// 合并多个信号，需要等前面的信号发出完成时，才会订阅后面的那个
 - (RACSignal *)concat:(RACSignal *)signal {
+    // concat 与 bind 类似，都是返回一个新的信号
     return [[RACSignal createSignal:^(id<RACSubscriber> subscriber) {
         RACCompoundDisposable *compoundDisposable = [[RACCompoundDisposable alloc] init];
         
+        // 先订阅自己
         RACDisposable *sourceDisposable = [self subscribeNext:^(id x) {
             [subscriber sendNext:x];
         } error:^(NSError *error) {
             [subscriber sendError:error];
         } completed:^{
+            // 只有在自己完成时，再订阅传入的参数信号
             RACDisposable *concattedDisposable = [signal subscribe:subscriber];
             [compoundDisposable addDisposable:concattedDisposable];
         }];

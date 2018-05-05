@@ -15,6 +15,7 @@
 		F180DA0E209D9BA80053A37B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F180DA0C209D9BA80053A37B /* LaunchScreen.storyboard */; };
 		F180DA11209D9BA80053A37B /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = F180DA10209D9BA80053A37B /* main.m */; };
 		F180DA18209DAA610053A37B /* RSRacBind.m in Sources */ = {isa = PBXBuildFile; fileRef = F180DA17209DAA610053A37B /* RSRacBind.m */; };
+		F180DA1C209DB6B50053A37B /* RSRacConcat.m in Sources */ = {isa = PBXBuildFile; fileRef = F180DA1B209DB6B50053A37B /* RSRacConcat.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +33,8 @@
 		F180DA10209D9BA80053A37B /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		F180DA16209DAA610053A37B /* RSRacBind.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RSRacBind.h; sourceTree = "<group>"; };
 		F180DA17209DAA610053A37B /* RSRacBind.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RSRacBind.m; sourceTree = "<group>"; };
+		F180DA1A209DB6B50053A37B /* RSRacConcat.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RSRacConcat.h; sourceTree = "<group>"; };
+		F180DA1B209DB6B50053A37B /* RSRacConcat.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RSRacConcat.m; sourceTree = "<group>"; };
 		F919520A2104E1D9EE22BD26 /* Pods-RAC.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RAC.debug.xcconfig"; path = "Pods/Target Support Files/Pods-RAC/Pods-RAC.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -77,18 +80,20 @@
 			isa = PBXGroup;
 			children = (
 				F180DA19209DAAAB0053A37B /* App */,
-				F180DA15209DAA390053A37B /* Bind */,
+				F180DA15209DAA390053A37B /* Operator */,
 			);
 			path = RAC;
 			sourceTree = "<group>";
 		};
-		F180DA15209DAA390053A37B /* Bind */ = {
+		F180DA15209DAA390053A37B /* Operator */ = {
 			isa = PBXGroup;
 			children = (
 				F180DA16209DAA610053A37B /* RSRacBind.h */,
 				F180DA17209DAA610053A37B /* RSRacBind.m */,
+				F180DA1A209DB6B50053A37B /* RSRacConcat.h */,
+				F180DA1B209DB6B50053A37B /* RSRacConcat.m */,
 			);
-			path = Bind;
+			path = Operator;
 			sourceTree = "<group>";
 		};
 		F180DA19209DAAAB0053A37B /* App */ = {
@@ -249,6 +254,7 @@
 				F180DA06209D9BA70053A37B /* ViewController.m in Sources */,
 				F180DA11209D9BA80053A37B /* main.m in Sources */,
 				F180DA18209DAA610053A37B /* RSRacBind.m in Sources */,
+				F180DA1C209DB6B50053A37B /* RSRacConcat.m in Sources */,
 				F180DA03209D9BA70053A37B /* AppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
