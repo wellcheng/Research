@@ -7,6 +7,7 @@
 //
 
 #import "ViewController.h"
+#import "RSRacBind.h"
 
 @interface ViewController ()
 
@@ -17,13 +18,11 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
+    [self rs_bind];
 }
 
-
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+- (void)rs_bind {
+    [RSRacBind bind1];
 }
-
 
 @end

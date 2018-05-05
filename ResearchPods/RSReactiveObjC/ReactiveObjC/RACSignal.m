@@ -98,22 +98,23 @@
      * -bind: should:
      *
      * 1. Subscribe to the original signal of values.
-     首先，订阅 value 的原始信号
+     首先，订阅被 bind 的信号，以下称 origin signal，bind 之后，会返回一个 signal，称 return signal
      
      * 2. Any time the original signal sends a value, transform it using the binding block.
-     只要 origin signal 发出 value，使用 bindBlock 进行转换
+     只要 origin signal 发出 value，使用 bindBlock 进行转换，转换之后得到另一个新的 singal，以下成为 bind singal
      
      * 3. If the binding block returns a signal, subscribe to it, and pass all of its values through to the subscriber as they're received.
-     如果转换后是一个 signal，那么就接着订阅它，并且将订阅后产生的所有 values 交给 receiver
+     如果转换后的 bind singal 不为 nil，那么就接着订阅它，并且将订阅后产生的所有 values 交给 return signal 的 receiver，发送出去
+     如果转换后为 nil，那么就直接结束 return signal
      
      * 4. If the binding block asks the bind to terminate, complete the _original_ signal.
-     如果 block 要求终止 bind ，那么原始的 signal 也会完成
+     如果 block 要求终止 bind ，也就是 stop = YES，那么就直接结束 return signal
      
      * 5. When _all_ signals complete, send completed to the subscriber.
-     如果这个过程中所有的 signal 都完成，那么就发送 completed 给 subscriber 这个被订阅者
+     如果这个过程中所有转换后的 signal 都完成，那么就发送 completed 给 return subscriber 这个被订阅者
      *
      * If any signal sends an error at any point, send that to the subscriber.
-     在这个过程中，所有的 error 都原封不动发送给订阅者
+     在这个过程中，所有的 error 都原封不动通过 return signal 发送，并发送后直接结束
      */
     
     // 1 - bind 最终会返回一个信号，下面看一下 bind 返回的这个信号做了什么事情
@@ -126,10 +127,11 @@
         // 3 - 创建同一的 disposable
         RACCompoundDisposable *compoundDisposable = [RACCompoundDisposable compoundDisposable];
         
-        // 4 - 创建 completedSignal 回调，当完成时回调，
+        // 4 - 创建 completedSignal 回调，当转换后的信号 完成时回调，
         void (^completeSignal)(RACDisposable *) = ^(RACDisposable *finishedDisposable) {
             //
             if (OSAtomicDecrement32Barrier(&signalCount) == 0) {
+                // 所有被转换的信号已经完成了，那么自己也完成
                 [subscriber sendCompleted];
                 [compoundDisposable dispose];
             } else {
@@ -137,7 +139,7 @@
             }
         };
         
-        // 5- 创建添加信号的回调，添加信号时调用
+        // 5- 创建添加信号的回调，转换后的信号 被添加时调用
         void (^addSignal)(RACSignal *) = ^(RACSignal *signal) {
             // singal 数量增加
             OSAtomicIncrement32Barrier(&signalCount);
@@ -145,16 +147,18 @@
             RACSerialDisposable *selfDisposable = [[RACSerialDisposable alloc] init];
             [compoundDisposable addDisposable:selfDisposable];
             
-            // 让 addSingal 被订阅，
+            // 订阅转换后的信号
             RACDisposable *disposable = [signal subscribeNext:^(id x) {
-                // addSingal 发出的 value 再次通过 returnSginal 发出
+                // 转换信号，对于值，直接传递出去
                 [subscriber sendNext:x];
             } error:^(NSError *error) {
-                // 如果 addSignal 发生了 error，将 error 继续转发给 returnSignal，并且用 compoundDisposable 进行回收
+                // 转换信号，对于错误，sendError
+                // 并且结束整个 bind 过程
                 [compoundDisposable dispose];
-                [subscriber sendError:error];
+                [subscriber sendError:error];   // 因为转换出了 error，从而导致整个 subscribe 提前结束
             } completed:^{
-                // 如果 addSignal 完成了，就调用完成回调，并传入 dispose，保证与 compoundDisposable 一起被回收
+                // 如果转换信号 完成了，就调用完成回调，
+                // 并传入 dispose，保证与 compoundDisposable 一起被回收
                 @autoreleasepool {
                     completeSignal(selfDisposable);
                 }
@@ -169,7 +173,7 @@
             RACSerialDisposable *selfDisposable = [[RACSerialDisposable alloc] init];
             [compoundDisposable addDisposable:selfDisposable];
             
-            // 这里才是核心，开始订阅 self 这个 signal
+            // 这里才是核心，开始订阅 self 这个 origin signal
             RACDisposable *bindingDisposable = [self subscribeNext:^(id x) {
                 // Manually check disposal to handle synchronous errors.
                 // 如果 compoundDisposable 已经被 dispsoe 了，那么就不用再处理无意义的事情了
@@ -185,7 +189,7 @@
                     if (signal == nil || stop) {
                         // 当转换失败或者 stop 时，停止当前对 self 的继续 bind，并回收
                         [selfDisposable dispose];
-                        // 调用完成回调，让 returnSignal 完成，同时进行回收
+                        // 调用完成回调，让 returnSignal 完成，同时进行回收，因为只有 add 之后，在 completeSignal 时，才会因为还有未完成的 转换信号，让 return signal 继续，这里因为 origin signal 在中间发生了一次转换 nil，导致提前结束
                         completeSignal(selfDisposable);
                     }
                 }
@@ -194,7 +198,7 @@
                 [compoundDisposable dispose];
                 [subscriber sendError:error];
             } completed:^{
-                // 调用完成回调，让 returnSignal 完成，同时进行回收
+                // self 自己，也就是 origin 完成回调，让 returnSignal 完成，同时进行回收
                 @autoreleasepool {
                     completeSignal(selfDisposable);
                 }

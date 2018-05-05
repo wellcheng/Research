@@ -14,6 +14,7 @@
 		F180DA0B209D9BA80053A37B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F180DA0A209D9BA80053A37B /* Assets.xcassets */; };
 		F180DA0E209D9BA80053A37B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F180DA0C209D9BA80053A37B /* LaunchScreen.storyboard */; };
 		F180DA11209D9BA80053A37B /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = F180DA10209D9BA80053A37B /* main.m */; };
+		F180DA18209DAA610053A37B /* RSRacBind.m in Sources */ = {isa = PBXBuildFile; fileRef = F180DA17209DAA610053A37B /* RSRacBind.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,6 +30,8 @@
 		F180DA0D209D9BA80053A37B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		F180DA0F209D9BA80053A37B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F180DA10209D9BA80053A37B /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		F180DA16209DAA610053A37B /* RSRacBind.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RSRacBind.h; sourceTree = "<group>"; };
+		F180DA17209DAA610053A37B /* RSRacBind.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RSRacBind.m; sourceTree = "<group>"; };
 		F919520A2104E1D9EE22BD26 /* Pods-RAC.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RAC.debug.xcconfig"; path = "Pods/Target Support Files/Pods-RAC/Pods-RAC.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -73,6 +76,24 @@
 		F180DA00209D9BA70053A37B /* RAC */ = {
 			isa = PBXGroup;
 			children = (
+				F180DA19209DAAAB0053A37B /* App */,
+				F180DA15209DAA390053A37B /* Bind */,
+			);
+			path = RAC;
+			sourceTree = "<group>";
+		};
+		F180DA15209DAA390053A37B /* Bind */ = {
+			isa = PBXGroup;
+			children = (
+				F180DA16209DAA610053A37B /* RSRacBind.h */,
+				F180DA17209DAA610053A37B /* RSRacBind.m */,
+			);
+			path = Bind;
+			sourceTree = "<group>";
+		};
+		F180DA19209DAAAB0053A37B /* App */ = {
+			isa = PBXGroup;
+			children = (
 				F180DA01209D9BA70053A37B /* AppDelegate.h */,
 				F180DA02209D9BA70053A37B /* AppDelegate.m */,
 				F180DA04209D9BA70053A37B /* ViewController.h */,
@@ -83,7 +104,7 @@
 				F180DA0F209D9BA80053A37B /* Info.plist */,
 				F180DA10209D9BA80053A37B /* main.m */,
 			);
-			path = RAC;
+			name = App;
 			sourceTree = "<group>";
 		};
 		F6BE47D17307CEC5A775B459 /* Pods */ = {
@@ -227,6 +248,7 @@
 			files = (
 				F180DA06209D9BA70053A37B /* ViewController.m in Sources */,
 				F180DA11209D9BA80053A37B /* main.m in Sources */,
+				F180DA18209DAA610053A37B /* RSRacBind.m in Sources */,
 				F180DA03209D9BA70053A37B /* AppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
