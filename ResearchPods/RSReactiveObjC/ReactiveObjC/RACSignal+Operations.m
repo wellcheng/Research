@@ -139,12 +139,17 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}] setNameWithFormat:@"[%@] -doCompleted:", self.name];
 }
 
+// 限流
 - (RACSignal *)throttle:(NSTimeInterval)interval {
 	return [[self throttle:interval valuesPassingTest:^(id _) {
 		return YES;
 	}] setNameWithFormat:@"[%@] -throttle: %f", self.name, (double)interval];
 }
 
+// 在原始信号发出每个 event 后的 time interval 内，如果没有新值，那么这个保存的值就发出来，不然就继续等
+// 使用上就是限流，原始信号发出一个 value，只有在 interval 结束后，这段期间没新的 value，才会把这个 value 发出来
+// 如果流量太大，可能会导致 next 一直不被掉
+// predicate 表示是否需要将这个 value 加入到限流策略中
 - (RACSignal *)throttle:(NSTimeInterval)interval valuesPassingTest:(BOOL (^)(id next))predicate {
 	NSCParameterAssert(interval >= 0);
 	NSCParameterAssert(predicate != nil);
@@ -163,11 +168,13 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 
 		void (^flushNext)(BOOL send) = ^(BOOL send) {
 			@synchronized (compoundDisposable) {
+                // 先清理上一个定时器
 				[nextDisposable.disposable dispose];
-
+                
+                // 无下个值，直接返回
 				if (!hasNextValue) return;
 				if (send) [subscriber sendNext:nextValue];
-
+                // 有下个值，需要清空
 				nextValue = nil;
 				hasNextValue = NO;
 			}
@@ -175,18 +182,21 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 
 		RACDisposable *subscriptionDisposable = [self subscribeNext:^(id x) {
 			RACScheduler *delayScheduler = RACScheduler.currentScheduler ?: scheduler;
+            // predicate 表是是否豁免
 			BOOL shouldThrottle = predicate(x);
 
 			@synchronized (compoundDisposable) {
-				flushNext(NO);
+				flushNext(NO);  // 新的 value 到来，无需发送，清理之前的值
 				if (!shouldThrottle) {
+                    // 无视限流
 					[subscriber sendNext:x];
 					return;
 				}
-
+                // 需要被限流，保存这次值，并且在 timer 之后把这个值发出来，当然，这段时间不能有新值，不然 timer 被取消
 				nextValue = x;
 				hasNextValue = YES;
 				nextDisposable.disposable = [delayScheduler afterDelay:interval schedule:^{
+                    // 延迟 interval 后再次 flush ，这个期间的 value 都丢掉
 					flushNext(YES);
 				}];
 			}
@@ -375,6 +385,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}] setNameWithFormat:@"[%@] -bufferWithTime: %f onScheduler: %@", self.name, (double)interval, scheduler];
 }
 
+// 利用合计方法，将所有的 values 封装到集合中
 - (RACSignal *)collect {
 	return [[self aggregateWithStartFactory:^{
 		return [[NSMutableArray alloc] init];
@@ -615,10 +626,12 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 		setNameWithFormat:@"[%@] -then:", self.name];
 }
 
+//
 - (RACSignal *)concat {
 	return [[self flatten:1] setNameWithFormat:@"[%@] -concat", self.name];
 }
 
+// 合计
 - (RACSignal *)aggregateWithStartFactory:(id (^)(void))startFactory reduce:(id (^)(id running, id next))reduceBlock {
 	NSCParameterAssert(startFactory != NULL);
 	NSCParameterAssert(reduceBlock != NULL);
@@ -628,6 +641,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}] setNameWithFormat:@"[%@] -aggregateWithStartFactory:reduce:", self.name];
 }
 
+// 合计
 - (RACSignal *)aggregateWithStart:(id)start reduce:(id (^)(id running, id next))reduceBlock {
 	return [[self
 		aggregateWithStart:start
@@ -637,6 +651,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 		setNameWithFormat:@"[%@] -aggregateWithStart: %@ reduce:", self.name, RACDescription(start)];
 }
 
+// 得到  last 合计
 - (RACSignal *)aggregateWithStart:(id)start reduceWithIndex:(id (^)(id, id, NSUInteger))reduceBlock {
 	return [[[[self
 		scanWithStart:start reduceWithIndex:reduceBlock]
@@ -987,6 +1002,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	return connection.signal;
 }
 
+//
 - (RACSignal *)replayLazily {
 	RACMulticastConnection *connection = [self multicast:[RACReplaySubject subject]];
 	return [[RACSignal
@@ -997,6 +1013,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 		setNameWithFormat:@"[%@] -replayLazily", self.name];
 }
 
+// 其实就是 timeout 后，就在 scheduler 上 dispose 并发送 error
 - (RACSignal *)timeout:(NSTimeInterval)interval onScheduler:(RACScheduler *)scheduler {
 	NSCParameterAssert(scheduler != nil);
 	NSCParameterAssert(scheduler != RACScheduler.immediateScheduler);
@@ -1026,6 +1043,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}] setNameWithFormat:@"[%@] -timeout: %f onScheduler: %@", self.name, (double)interval, scheduler];
 }
 
+// 分发到 scheduler 上
 - (RACSignal *)deliverOn:(RACScheduler *)scheduler {
 	return [[RACSignal createSignal:^(id<RACSubscriber> subscriber) {
 		return [self subscribeNext:^(id x) {
@@ -1044,6 +1062,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}] setNameWithFormat:@"[%@] -deliverOn: %@", self.name, scheduler];
 }
 
+// 在 scheduler 上订阅
 - (RACSignal *)subscribeOn:(RACScheduler *)scheduler {
 	return [[RACSignal createSignal:^(id<RACSubscriber> subscriber) {
 		RACCompoundDisposable *disposable = [RACCompoundDisposable compoundDisposable];
@@ -1059,6 +1078,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}] setNameWithFormat:@"[%@] -subscribeOn: %@", self.name, scheduler];
 }
 
+// 保证分发在主线程上
 - (RACSignal *)deliverOnMainThread {
 	return [[RACSignal createSignal:^(id<RACSubscriber> subscriber) {
 		__block volatile int32_t queueLength = 0;

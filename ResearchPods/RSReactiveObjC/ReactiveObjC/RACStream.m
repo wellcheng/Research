@@ -275,6 +275,7 @@
 	return [result setNameWithFormat:@"+concat: %@", streams];
 }
 
+// scan 无 index 版本
 - (__kindof RACStream *)scanWithStart:(id)startingValue reduce:(id (^)(id running, id next))reduceBlock {
 	NSCParameterAssert(reduceBlock != nil);
 
@@ -286,6 +287,7 @@
 		setNameWithFormat:@"[%@] -scanWithStart: %@ reduce:", self.name, RACDescription(startingValue)];
 }
 
+// 扫描所有元素，用 startValue 作为初始值，然后挨个用 reduce block 转换为下一个 running
 - (__kindof RACStream *)scanWithStart:(id)startingValue reduceWithIndex:(id (^)(id, id, NSUInteger))reduceBlock {
 	NSCParameterAssert(reduceBlock != nil);
 

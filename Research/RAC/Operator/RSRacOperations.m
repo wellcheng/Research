@@ -101,4 +101,31 @@
         NSLog(@"repeat completed");
     }];
 }
+
++ (void)throttle
+{
+    RACSignal *oriSignal = [RACSignal createSignal:^RACDisposable * _Nullable(id<RACSubscriber>  _Nonnull subscriber)
+    {
+        [[RACSignal interval:5 onScheduler:RACScheduler.mainThreadScheduler] subscribeNext:^(NSDate * _Nullable x) {
+            [subscriber sendNext:@(x.timeIntervalSince1970)];
+        } error:^(NSError * _Nullable error) {
+            [subscriber sendError:error];
+        } completed:^{
+            [subscriber sendCompleted];
+        }];
+        return [RACDisposable disposableWithBlock:^{
+            NSLog(@"oriSignal dispose");
+        }];
+    }];
+    [[oriSignal throttle:20 valuesPassingTest:^BOOL(NSNumber * _Nullable next) {
+        NSLog(@"next :%@", next);
+        return YES;
+    }] subscribeNext:^(id  _Nullable x) {
+        NSLog(@"throttle %@", x);
+    } error:^(NSError * _Nullable error) {
+        NSLog(@"repeat error %@", error);
+    } completed:^{
+        NSLog(@"repeat completed");
+    }];
+}
 @end

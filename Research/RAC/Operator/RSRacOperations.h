@@ -12,4 +12,5 @@
 + (void)bind;
 + (void)concat;
 + (void)repeat;
++ (void)throttle;
 @end
