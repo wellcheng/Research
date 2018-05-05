@@ -1182,6 +1182,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 }
 
 // retry 就是在 error 发生时，前面的 count 次数里，不 dispose，不 sendError，从而继续下去
+// 但是只有发生 error 时才 retry
 - (RACSignal *)retry:(NSInteger)retryCount {
 	return [[RACSignal createSignal:^(id<RACSubscriber> subscriber) {
 		__block NSInteger currentRetryCount = 0;
@@ -1200,17 +1201,20 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 				[subscriber sendError:error];
 			},
 			^(RACDisposable *disposable) {
+                // repeat 这里什么都没有，因为是需要不断循环，但是 retry 这里不一样，当这次递归操作 completed 后，就不再执行了
 				[disposable dispose];
 				[subscriber sendCompleted];
 			});
 	}] setNameWithFormat:@"[%@] -retry: %lu", self.name, (unsigned long)retryCount];
 }
 
-// retry 一次
+// retry 无数次，但是只有发生 error 时才 retry
 - (RACSignal *)retry {
 	return [[self retry:0] setNameWithFormat:@"[%@] -retry", self.name];
 }
 
+// 取样器，当 sampler 发生事件时，就从 self signal 中拿最后一个值
+// 最后一个值是可以重复的
 - (RACSignal *)sample:(RACSignal *)sampler {
 	NSCParameterAssert(sampler != nil);
 
@@ -1221,7 +1225,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 
 		RACSerialDisposable *samplerDisposable = [[RACSerialDisposable alloc] init];
 		RACDisposable *sourceDisposable = [self subscribeNext:^(id x) {
-			[lock lock];
+			[lock lock];    // source signal 用来保存 lastValue
 			hasValue = YES;
 			lastValue = x;
 			[lock unlock];
@@ -1237,12 +1241,12 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 			BOOL shouldSend = NO;
 			id value;
 			[lock lock];
-			shouldSend = hasValue;
+			shouldSend = hasValue;  // 获取 source 的 value，当 sampler 有 event 时
 			value = lastValue;
 			[lock unlock];
 
 			if (shouldSend) {
-				[subscriber sendNext:value];
+				[subscriber sendNext:value];    // 取样器发出取样
 			}
 		} error:^(NSError *error) {
 			[sourceDisposable dispose];
