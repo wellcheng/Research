@@ -164,12 +164,14 @@
 	}] setNameWithFormat:@"[%@] -reduceEach:", self.name];
 }
 
+// Start With 其实就是在 signal 发出信号之前先用一个 value 作为开始
 - (__kindof RACStream *)startWith:(id)value {
 	return [[[self.class return:value]
 		concat:self]
 		setNameWithFormat:@"[%@] -startWith: %@", self.name, RACDescription(value)];
 }
 
+// skip 也用到了 bind，能够跳过最前面的几个 value
 - (__kindof RACStream *)skip:(NSUInteger)skipCount {
 	Class class = self.class;
 	
@@ -178,13 +180,14 @@
 
 		return ^(id value, BOOL *stop) {
 			if (skipped >= skipCount) return [class return:value];
-
+            // 远离就是需要 skip 的几个，都用 empty 代替
 			skipped++;
 			return class.empty;
 		};
 	}] setNameWithFormat:@"[%@] -skip: %lu", self.name, (unsigned long)skipCount];
 }
 
+// take 说白了就是 skip 的变种，只获取前面的几个 value
 - (__kindof RACStream *)take:(NSUInteger)count {
 	Class class = self.class;
 	
@@ -196,6 +199,7 @@
 		return ^ id (id value, BOOL *stop) {
 			if (taken < count) {
 				++taken;
+                // take 足够的 value 后就 stop ，让 bind 返回的 signal 完成
 				if (taken == count) *stop = YES;
 				return [class return:value];
 			} else {

@@ -1313,7 +1313,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 		}]);
 	}] setNameWithFormat:@"[%@] -or", self.name];
 }
-
+// reduce apply 其实还是 Map tuple ，不过这次是自带了 block，tuple 的第一个参数为 block，tuple 后面的参数个数还要与第一个 block 一致
 - (RACSignal *)reduceApply {
 	return [[self map:^(RACTuple *tuple) {
 		NSCAssert([tuple isKindOfClass:RACTuple.class], @"-reduceApply must only be used on a signal of RACTuples. Instead, received: %@", tuple);
