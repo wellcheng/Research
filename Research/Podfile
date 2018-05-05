@@ -1,0 +1,9 @@
+platform :ios, '11.0'
+use_frameworks!
+
+project './Research.xcodeproj'
+
+target 'RAC' do
+    pod 'RSReactiveObjC', :path => '../ResearchPods/RSReactiveObjC/RSReactiveObjC.podspec'
+    pod 'AFNetworking', '~> 3.2.0'
+end

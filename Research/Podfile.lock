@@ -1,0 +1,33 @@
+PODS:
+  - AFNetworking (3.2.0):
+    - AFNetworking/NSURLSession (= 3.2.0)
+    - AFNetworking/Reachability (= 3.2.0)
+    - AFNetworking/Security (= 3.2.0)
+    - AFNetworking/Serialization (= 3.2.0)
+    - AFNetworking/UIKit (= 3.2.0)
+  - AFNetworking/NSURLSession (3.2.0):
+    - AFNetworking/Reachability
+    - AFNetworking/Security
+    - AFNetworking/Serialization
+  - AFNetworking/Reachability (3.2.0)
+  - AFNetworking/Security (3.2.0)
+  - AFNetworking/Serialization (3.2.0)
+  - AFNetworking/UIKit (3.2.0):
+    - AFNetworking/NSURLSession
+  - RSReactiveObjC (3.1.0)
+
+DEPENDENCIES:
+  - AFNetworking (~> 3.2.0)
+  - RSReactiveObjC (from `../ResearchPods/RSReactiveObjC/RSReactiveObjC.podspec`)
+
+EXTERNAL SOURCES:
+  RSReactiveObjC:
+    :path: ../ResearchPods/RSReactiveObjC/RSReactiveObjC.podspec
+
+SPEC CHECKSUMS:
+  AFNetworking: 8ac6017b94ea105479f7776e5288e48ae9c59bb4
+  RSReactiveObjC: 897f8c853031295f0619a03057c07fad219e5e8d
+
+PODFILE CHECKSUM: eca82918cf77de33b132a11097a1743aafacfa7e
+
+COCOAPODS: 1.3.1
