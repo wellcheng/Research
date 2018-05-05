@@ -1265,18 +1265,21 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}] setNameWithFormat:@"[%@] -materialize", self.name];
 }
 
+// dematerialize 就是 materialize 的逆向
 - (RACSignal *)dematerialize {
 	return [[self bind:^{
 		return ^(RACEvent *event, BOOL *stop) {
+            // 仍然是 bind
 			switch (event.eventType) {
+                    // ，对 complete 事件转为 空
 				case RACEventTypeCompleted:
 					*stop = YES;
 					return [RACSignal empty];
-
+                    // error 还原，并停止
 				case RACEventTypeError:
 					*stop = YES;
 					return [RACSignal error:event.error];
-
+                    // next 直接还原为 value 就好了
 				case RACEventTypeNext:
 					return [RACSignal return:event.value];
 			}
