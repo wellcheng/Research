@@ -70,11 +70,15 @@
 
 @implementation RACStream (Operations)
 
+// flattenMap 的实现其实就是 bind
 - (__kindof RACStream *)flattenMap:(__kindof RACStream * (^)(id value))block {
 	Class class = self.class;
-
+    
+    // flattenMap 的实现中，其实就是将 map 的 block 作为 bind 的 tansform block
 	return [[self bind:^{
+        // 这里其实是要求 return signal 的，不过没有写明，但是下面的 assert 中还是要保证是 signal
 		return ^(id value, BOOL *stop) {
+            // 这里有一点，就是过滤了 nil，也就是 block 返回的信号中存在 nil 时，需要使用 empty 替换
 			id stream = block(value) ?: [class empty];
 			NSCAssert([stream isKindOfClass:RACStream.class], @"Value returned from -flattenMap: is not a stream: %@", stream);
 
@@ -89,12 +93,16 @@
 	}] setNameWithFormat:@"[%@] -flatten", self.name];
 }
 
+// 对自己调用 map ，其实就是先把自己的 value 包装为 signal，调用 fattenmap 拍平这些 signal
+// 因为包装的时候用了 return，所以根传统的 map 是一样的，就是 value replace value
 - (__kindof RACStream *)map:(id (^)(id value))block {
 	NSCParameterAssert(block != nil);
 
 	Class class = self.class;
 	
 	return [[self flattenMap:^(id value) {
+        // flattenMap blcok 是，把 block 执行后的结果，包装起来，作为一个 value 直接 return
+        // 因为 faltten 内部是 bind，会把 signal 继续订阅，相当于拍平
 		return [class return:block(value)];
 	}] setNameWithFormat:@"[%@] -map:", self.name];
 }

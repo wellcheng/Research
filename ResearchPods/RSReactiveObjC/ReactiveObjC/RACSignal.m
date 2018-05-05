@@ -243,7 +243,7 @@
         NSMutableArray *otherValues = [NSMutableArray array];
         
         void (^sendCompletedIfNecessary)(void) = ^{
-            // 当两个信号有任一一个完成，新信号就完成
+            // 当两个信号有任一一个完成，并且值全部被处理，新信号就完成
             @synchronized (selfValues) {
                 BOOL selfEmpty = (selfCompleted && selfValues.count == 0);
                 BOOL otherEmpty = (otherCompleted && otherValues.count == 0);
