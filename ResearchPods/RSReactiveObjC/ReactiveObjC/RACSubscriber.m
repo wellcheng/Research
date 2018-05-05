@@ -62,7 +62,8 @@
 }
 
 #pragma mark RACSubscriber
-
+// 最终都是走到了这里，执行了这里的 block
+// 也就是说，只要 subscribe 那边一 send，这里就会立刻被调用。是同步的
 - (void)sendNext:(id)value {
 	@synchronized (self) {
 		void (^nextBlock)(id) = [self.next copy];

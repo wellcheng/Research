@@ -14,18 +14,18 @@
 #if !defined(DTRACE_PROBES_DISABLED) || !DTRACE_PROBES_DISABLED
 
 static const char *cleanedDTraceString(NSString *original) {
-	return [original stringByReplacingOccurrencesOfString:@"\\s+" withString:@" " options:NSRegularExpressionSearch range:NSMakeRange(0, original.length)].UTF8String;
+    return [original stringByReplacingOccurrencesOfString:@"\\s+" withString:@" " options:NSRegularExpressionSearch range:NSMakeRange(0, original.length)].UTF8String;
 }
 
 static const char *cleanedSignalDescription(RACSignal *signal) {
-	NSString *desc = signal.description;
-
-	NSRange range = [desc rangeOfString:@" name:"];
-	if (range.location != NSNotFound) {
-		desc = [desc stringByReplacingCharactersInRange:range withString:@""];
-	}
-
-	return cleanedDTraceString(desc);
+    NSString *desc = signal.description;
+    
+    NSRange range = [desc rangeOfString:@" name:"];
+    if (range.location != NSNotFound) {
+        desc = [desc stringByReplacingCharactersInRange:range withString:@""];
+    }
+    
+    return cleanedDTraceString(desc);
 }
 
 #endif
@@ -53,54 +53,57 @@ static const char *cleanedSignalDescription(RACSignal *signal) {
 #pragma mark Lifecycle
 
 - (instancetype)initWithSubscriber:(id<RACSubscriber>)subscriber signal:(RACSignal *)signal disposable:(RACCompoundDisposable *)disposable {
-	NSCParameterAssert(subscriber != nil);
-
-	self = [super init];
-
-	_innerSubscriber = subscriber;
-	_signal = signal;
-	_disposable = disposable;
-
-	[self.innerSubscriber didSubscribeWithDisposable:self.disposable];
-	return self;
+    NSCParameterAssert(subscriber != nil);
+    
+    self = [super init];
+    
+    _innerSubscriber = subscriber;
+    _signal = signal;
+    _disposable = disposable;
+    
+    [self.innerSubscriber didSubscribeWithDisposable:self.disposable];
+    return self;
 }
 
 #pragma mark RACSubscriber
 
 - (void)sendNext:(id)value {
-	if (self.disposable.disposed) return;
-
-	if (RACSIGNAL_NEXT_ENABLED()) {
-		RACSIGNAL_NEXT(cleanedSignalDescription(self.signal), cleanedDTraceString(self.innerSubscriber.description), cleanedDTraceString([value description]));
-	}
-
-	[self.innerSubscriber sendNext:value];
+    if (self.disposable.disposed) return;
+    
+    if (RACSIGNAL_NEXT_ENABLED()) {
+        RACSIGNAL_NEXT(cleanedSignalDescription(self.signal), cleanedDTraceString(self.innerSubscriber.description), cleanedDTraceString([value description]));
+    }
+    // RACPassthroughSubscriber 将回调传递给 inner
+    // Inner 就是 RACSubscribe
+    [self.innerSubscriber sendNext:value];
 }
 
 - (void)sendError:(NSError *)error {
-	if (self.disposable.disposed) return;
-
-	if (RACSIGNAL_ERROR_ENABLED()) {
-		RACSIGNAL_ERROR(cleanedSignalDescription(self.signal), cleanedDTraceString(self.innerSubscriber.description), cleanedDTraceString(error.description));
-	}
-
-	[self.innerSubscriber sendError:error];
+    if (self.disposable.disposed) return;
+    
+    if (RACSIGNAL_ERROR_ENABLED()) {
+        RACSIGNAL_ERROR(cleanedSignalDescription(self.signal), cleanedDTraceString(self.innerSubscriber.description), cleanedDTraceString(error.description));
+    }
+    // RACPassthroughSubscriber 将回调传递给 inner
+    // Inner 就是 RACSubscribe
+    [self.innerSubscriber sendError:error];
 }
 
 - (void)sendCompleted {
-	if (self.disposable.disposed) return;
-
-	if (RACSIGNAL_COMPLETED_ENABLED()) {
-		RACSIGNAL_COMPLETED(cleanedSignalDescription(self.signal), cleanedDTraceString(self.innerSubscriber.description));
-	}
-
-	[self.innerSubscriber sendCompleted];
+    if (self.disposable.disposed) return;
+    
+    if (RACSIGNAL_COMPLETED_ENABLED()) {
+        RACSIGNAL_COMPLETED(cleanedSignalDescription(self.signal), cleanedDTraceString(self.innerSubscriber.description));
+    }
+    // RACPassthroughSubscriber 将回调传递给 inner
+    // Inner 就是 RACSubscribe
+    [self.innerSubscriber sendCompleted];
 }
 
 - (void)didSubscribeWithDisposable:(RACCompoundDisposable *)disposable {
-	if (disposable != self.disposable) {
-		[self.disposable addDisposable:disposable];
-	}
+    if (disposable != self.disposable) {
+        [self.disposable addDisposable:disposable];
+    }
 }
 
 @end
