@@ -128,12 +128,14 @@
 		setNameWithFormat:@"[%@] -combinePreviousWithStart: %@ reduce:", self.name, RACDescription(start)];
 }
 
+// filter 也会返回一个新的 signal，内部仍然是 flatten map
 - (__kindof RACStream *)filter:(BOOL (^)(id value))block {
 	NSCParameterAssert(block != nil);
 
 	Class class = self.class;
 	
 	return [[self flattenMap:^ id (id value) {
+        // 不过在这里做了处理，如果 filter 的 block 返回了 YES，就返回 value，如果是 NO，就用 empty 替换，从而最终被过滤掉
 		if (block(value)) {
 			return [class return:value];
 		} else {
