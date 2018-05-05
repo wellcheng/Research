@@ -7,7 +7,7 @@
 //
 
 #import "RACChannel.h"
-#import <ReactiveObjC/RACEXTKeyPathCoding.h>
+#import <RSReactiveObjC/RACEXTKeyPathCoding.h>
 #import "RACmetamacros.h"
 
 /// Creates a RACKVOChannel to the given key path. When the targeted object

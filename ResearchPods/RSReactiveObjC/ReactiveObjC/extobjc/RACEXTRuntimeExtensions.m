@@ -7,7 +7,7 @@
 //  Released under the MIT license.
 //
 
-#import <ReactiveObjC/RACEXTRuntimeExtensions.h>
+#import <RSReactiveObjC/RACEXTRuntimeExtensions.h>
 
 #import <ctype.h>
 #import <Foundation/Foundation.h>

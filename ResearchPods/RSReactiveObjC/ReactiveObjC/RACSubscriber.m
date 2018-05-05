@@ -8,7 +8,7 @@
 
 #import "RACSubscriber.h"
 #import "RACSubscriber+Private.h"
-#import <ReactiveObjC/RACEXTScope.h>
+#import <RSReactiveObjC/RACEXTScope.h>
 #import "RACCompoundDisposable.h"
 
 @interface RACSubscriber ()
