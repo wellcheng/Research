@@ -40,32 +40,38 @@ const NSInteger RACSignalErrorNoMatchingCase = 2;
 // disposable passed to the block is _not_ disposed, then the signal is
 // subscribed to again.
 static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), void (^error)(NSError *, RACDisposable *), void (^completed)(RACDisposable *)) {
+    // 先保存三个 block
 	next = [next copy];
 	error = [error copy];
 	completed = [completed copy];
 
 	RACCompoundDisposable *compoundDisposable = [RACCompoundDisposable compoundDisposable];
 
+    // recursiveBlock 这个 block 接下来会被调用，这个 block 参数 recurse 也是一个 block
+    // 最后会不断重复调用这个 block，也就是 forever
 	RACSchedulerRecursiveBlock recursiveBlock = ^(void (^recurse)(void)) {
 		RACCompoundDisposable *selfDisposable = [RACCompoundDisposable compoundDisposable];
 		[compoundDisposable addDisposable:selfDisposable];
 
 		__weak RACDisposable *weakSelfDisposable = selfDisposable;
 
+        // 还是先对 signal 进行原始的订阅
 		RACDisposable *subscriptionDisposable = [signal subscribeNext:next error:^(NSError *e) {
 			@autoreleasepool {
+                // 有错误就发出
 				error(e, compoundDisposable);
 				[compoundDisposable removeDisposable:weakSelfDisposable];
 			}
-
-			recurse();
+            // recurse 有可能是被异步调用，有可能同步，同步就是一 subscribe 就立刻 send
+			recurse();  // 保证再次递归调用
 		} completed:^{
 			@autoreleasepool {
+                // 完成后回调
 				completed(compoundDisposable);
 				[compoundDisposable removeDisposable:weakSelfDisposable];
 			}
-
-			recurse();
+            // recurse 有可能是被异步调用，有可能同步，同步就是一 subscribe 就立刻 send
+			recurse();  // 保证再次递归调用
 		}];
 
 		[selfDisposable addDisposable:subscriptionDisposable];
@@ -73,9 +79,12 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 
 	// Subscribe once immediately, and then use recursive scheduling for any
 	// further resubscriptions.
+    // 立刻调用刚才的 recursiveBlock ，先订阅 singal，然后在其内部递归调用当前这个 block
 	recursiveBlock(^{
+        // recurse
 		RACScheduler *recursiveScheduler = RACScheduler.currentScheduler ?: [RACScheduler scheduler];
-
+        // 就是用一个可以递归的 schedule 再次调用 recursiveBlock
+        // recursiveBlock 在 schedule 中的调用没有了参数，其实在 scheduleRecursiveBlock 内部会传入参数，参数是重试次数
 		RACDisposable *schedulingDisposable = [recursiveScheduler scheduleRecursiveBlock:recursiveBlock];
 		[compoundDisposable addDisposable:schedulingDisposable];
 	});
@@ -225,6 +234,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}] setNameWithFormat:@"[%@] -delay: %f", self.name, (double)interval];
 }
 
+// repeat 就是在 complte 时继续递归，error 时停止
 - (RACSignal *)repeat {
 	return [[RACSignal createSignal:^(id<RACSubscriber> subscriber) {
 		return subscribeForever(self,
@@ -1119,15 +1129,18 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	return [[self groupBy:keyBlock transform:nil] setNameWithFormat:@"[%@] -groupBy:", self.name];
 }
 
+// 这个 any 因为永远满足，所以只要有信号发出，不管是 complete、error、next，都返回 YES
 - (RACSignal *)any {
 	return [[self any:^(id x) {
 		return YES;
 	}] setNameWithFormat:@"[%@] -any", self.name];
 }
 
+// Any，找到第一个满足 block 条件的 value，并且返回 YES，如果没找到就返回 NO
 - (RACSignal *)any:(BOOL (^)(id object))predicateBlock {
 	NSCParameterAssert(predicateBlock != NULL);
 
+    // 具像化转为 event 后 bind
 	return [[[self materialize] bind:^{
 		return ^(RACEvent *event, BOOL *stop) {
 			if (event.finished) {
@@ -1145,6 +1158,9 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}] setNameWithFormat:@"[%@] -any:", self.name];
 }
 
+// 要求所有的 value 都满足 predicateBlock，当 completed 后就返回 YES
+// 如果中间有一个 Error 事件或者 predicateBlock 不满足，就 return NO
+// 可以用来判断整个原信号发送过程中是否有错误事件RACEventTypeError，或者是否存在predicateBlock为NO的情况
 - (RACSignal *)all:(BOOL (^)(id object))predicateBlock {
 	NSCParameterAssert(predicateBlock != NULL);
 
@@ -1165,6 +1181,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}] setNameWithFormat:@"[%@] -all:", self.name];
 }
 
+// retry 就是在 error 发生时，前面的 count 次数里，不 dispose，不 sendError，从而继续下去
 - (RACSignal *)retry:(NSInteger)retryCount {
 	return [[RACSignal createSignal:^(id<RACSubscriber> subscriber) {
 		__block NSInteger currentRetryCount = 0;
@@ -1189,6 +1206,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}] setNameWithFormat:@"[%@] -retry: %lu", self.name, (unsigned long)retryCount];
 }
 
+// retry 一次
 - (RACSignal *)retry {
 	return [[self retry:0] setNameWithFormat:@"[%@] -retry", self.name];
 }

@@ -7,8 +7,7 @@
 //
 
 #import "ViewController.h"
-#import "RSRacBind.h"
-#import "RSRacConcat.h"
+#import "RSRacOperations.h"
 
 @interface ViewController ()
 
@@ -28,11 +27,18 @@
 }
 
 - (void)rs_bind {
-    [RSRacBind bind1];
+    [RSRacOperations bind];
 }
 
 - (void)rs_concat {
-    [RSRacConcat concat];
+    [RSRacOperations concat];
+}
+
+- (void)rs_operation {
+    NSString *method = @"repeat";
+    
+    SEL selector = NSSelectorFromString(method);
+    [RSRacOperations performSelector:selector];
 }
 
 @end

@@ -1,5 +1,5 @@
 //
-//  RSRacConcat.h
+//  RSRacBind.h
 //  RAC
 //
 //  Created by charvel on 2018/5/5.
@@ -8,6 +8,8 @@
 
 #import <Foundation/Foundation.h>
 
-@interface RSRacConcat : NSObject
+@interface RSRacOperations : NSObject
++ (void)bind;
 + (void)concat;
++ (void)repeat;
 @end

@@ -19,17 +19,17 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" translatesAutoresizingMaskIntoConstraints="NO" id="MRu-Qd-3ro">
-                                <rect key="frame" x="162.5" y="303.5" width="50" height="60"/>
+                                <rect key="frame" x="153.5" y="303.5" width="68" height="60"/>
                                 <subviews>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="4d4-cZ-GQJ" userLabel="Bind">
-                                        <rect key="frame" x="0.0" y="0.0" width="50" height="30"/>
-                                        <state key="normal" title="Bind"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="68" height="30"/>
+                                        <state key="normal" title="Operation"/>
                                         <connections>
                                             <action selector="doOperator:" destination="BYZ-38-t0r" eventType="touchUpInside" id="BHL-0B-vSu"/>
                                         </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="qoC-58-CWL" userLabel="Concat">
-                                        <rect key="frame" x="0.0" y="30" width="50" height="30"/>
+                                        <rect key="frame" x="0.0" y="30" width="68" height="30"/>
                                         <state key="normal" title="Concat"/>
                                         <connections>
                                             <action selector="doOperator:" destination="BYZ-38-t0r" eventType="touchUpInside" id="eOv-ZU-FtU"/>
