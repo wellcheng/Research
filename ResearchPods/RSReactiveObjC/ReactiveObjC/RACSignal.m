@@ -231,9 +231,10 @@
     }] setNameWithFormat:@"[%@] -concat: %@", self.name, signal];
 }
 
+// 拉链方法，第一个信号的值与第二个信号的值组成一个元组作为新信号的第一个值
 - (RACSignal *)zipWith:(RACSignal *)signal {
     NSCParameterAssert(signal != nil);
-    
+    // 也是创建一个新的信号
     return [[RACSignal createSignal:^(id<RACSubscriber> subscriber) {
         __block BOOL selfCompleted = NO;
         NSMutableArray *selfValues = [NSMutableArray array];
@@ -242,6 +243,7 @@
         NSMutableArray *otherValues = [NSMutableArray array];
         
         void (^sendCompletedIfNecessary)(void) = ^{
+            // 当两个信号有任一一个完成，新信号就完成
             @synchronized (selfValues) {
                 BOOL selfEmpty = (selfCompleted && selfValues.count == 0);
                 BOOL otherEmpty = (otherCompleted && otherValues.count == 0);
@@ -254,6 +256,7 @@
                 if (selfValues.count == 0) return;
                 if (otherValues.count == 0) return;
                 
+                // 只有当两个数组中都有值的时候，才发送一个元组
                 RACTuple *tuple = RACTuplePack(selfValues[0], otherValues[0]);
                 [selfValues removeObjectAtIndex:0];
                 [otherValues removeObjectAtIndex:0];
@@ -263,20 +266,24 @@
             }
         };
         
+        // 先订阅自己
         RACDisposable *selfDisposable = [self subscribeNext:^(id x) {
+            // 将自己的值保存起来
             @synchronized (selfValues) {
                 [selfValues addObject:x ?: RACTupleNil.tupleNil];
                 sendNext();
             }
         } error:^(NSError *error) {
+            // 有 error 就让新信号也 error
             [subscriber sendError:error];
         } completed:^{
+            // 完成之后
             @synchronized (selfValues) {
                 selfCompleted = YES;
                 sendCompletedIfNecessary();
             }
         }];
-        
+        // 接着订阅 other，与 self 思路一致
         RACDisposable *otherDisposable = [signal subscribeNext:^(id x) {
             @synchronized (selfValues) {
                 [otherValues addObject:x ?: RACTupleNil.tupleNil];
@@ -290,7 +297,7 @@
                 sendCompletedIfNecessary();
             }
         }];
-        
+        // disposable 也合并
         return [RACDisposable disposableWithBlock:^{
             [selfDisposable dispose];
             [otherDisposable dispose];
