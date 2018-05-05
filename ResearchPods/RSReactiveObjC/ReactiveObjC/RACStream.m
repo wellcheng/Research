@@ -144,18 +144,22 @@
 	}] setNameWithFormat:@"[%@] -filter:", self.name];
 }
 
+// ignore 就是 filter 的另一个，只 filter 掉与 value 匹配的值
 - (__kindof RACStream *)ignore:(id)value {
 	return [[self filter:^ BOOL (id innerValue) {
 		return innerValue != value && ![innerValue isEqual:value];
 	}] setNameWithFormat:@"[%@] -ignore: %@", self.name, RACDescription(value)];
 }
 
+// reduce 是聚合，不过 reduce 要求 map 的 value是 tuple 类型，从而可以利用 reduceBlock 对元组进行处理
 - (__kindof RACStream *)reduceEach:(RACReduceBlock)reduceBlock {
 	NSCParameterAssert(reduceBlock != nil);
 
 	__weak RACStream *stream __attribute__((unused)) = self;
 	return [[self map:^(RACTuple *t) {
+        // 这里要求【value from stream must be a tuple】
 		NSCAssert([t isKindOfClass:RACTuple.class], @"Value from stream %@ is not a tuple: %@", stream, t);
+        // 这里是利用多参数对 tuple 应用 reduceBlock
 		return [RACBlockTrampoline invokeBlock:reduceBlock withArguments:t];
 	}] setNameWithFormat:@"[%@] -reduceEach:", self.name];
 }
