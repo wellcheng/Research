@@ -54,6 +54,11 @@
 	BOOL shouldConnect = OSAtomicCompareAndSwap32Barrier(0, 1, &_hasConnected);
 
 	if (shouldConnect) {
+        // connect 的核心就是让 subject 信号去订阅 sourceSignal
+        // subject 本身就是可以 send value 的
+        // 在 sourceSignal 被订阅后，subject 作为 subscribe 传入那个订阅的 block，这样子 source signal 中
+        // 写好的 send 发放，将都被 subject 调用，subject 本身又是多播的，也就是在这 connect 一瞬间
+        // sourceSignnal 被订阅，并且之前 subscribe 过 subject 的都会收到 value
 		self.serialDisposable.disposable = [self.sourceSignal subscribe:_signal];
 	}
 

@@ -16,6 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// They're most helpful in bridging the non-RAC world to RAC, since they let you
 /// manually control the sending of events.
+
+// subject 可以被认为是一个能够手动去控制 send next 、error、completed 事件的 signal
 @interface RACSubject<ValueType> : RACSignal<ValueType> <RACSubscriber>
 
 /// Returns a new subject.

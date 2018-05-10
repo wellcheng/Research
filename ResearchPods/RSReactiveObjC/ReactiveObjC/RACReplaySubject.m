@@ -44,6 +44,7 @@ const NSUInteger RACReplaySubjectUnlimitedCapacity = NSUIntegerMax;
 	self = [super init];
 	
 	_capacity = capacity;
+    // 保存历史记录从而达到 replay 的效果
 	_valuesReceived = (capacity == RACReplaySubjectUnlimitedCapacity ? [NSMutableArray array] : [NSMutableArray arrayWithCapacity:capacity]);
 	
 	return self;
@@ -53,22 +54,25 @@ const NSUInteger RACReplaySubjectUnlimitedCapacity = NSUIntegerMax;
 
 - (RACDisposable *)subscribe:(id<RACSubscriber>)subscriber {
 	RACCompoundDisposable *compoundDisposable = [RACCompoundDisposable compoundDisposable];
-
+    
+    // subject 被订阅时，先 schedule replay 这个 block
 	RACDisposable *schedulingDisposable = [RACScheduler.subscriptionScheduler schedule:^{
 		@synchronized (self) {
 			for (id value in self.valuesReceived) {
+                // 不再被订阅就立刻 return
 				if (compoundDisposable.disposed) return;
-
+                // 发送曾经的值
 				[subscriber sendNext:(value == RACTupleNil.tupleNil ? nil : value)];
 			}
-
+            // 不再被订阅就立刻 return
 			if (compoundDisposable.disposed) return;
-
+            
 			if (self.hasCompleted) {
 				[subscriber sendCompleted];
 			} else if (self.hasError) {
 				[subscriber sendError:self.error];
 			} else {
+                // 如果 origin signal 信号还在 work，那么就订阅 origin signal 等待接收最新的值
 				RACDisposable *subscriptionDisposable = [super subscribe:subscriber];
 				[compoundDisposable addDisposable:subscriptionDisposable];
 			}
@@ -84,9 +88,11 @@ const NSUInteger RACReplaySubjectUnlimitedCapacity = NSUIntegerMax;
 
 - (void)sendNext:(id)value {
 	@synchronized (self) {
+        // 保存 next 值
 		[self.valuesReceived addObject:value ?: RACTupleNil.tupleNil];
 		[super sendNext:value];
 		
+        // 放弃超出容量的值
 		if (self.capacity != RACReplaySubjectUnlimitedCapacity && self.valuesReceived.count > self.capacity) {
 			[self.valuesReceived removeObjectsInRange:NSMakeRange(0, self.valuesReceived.count - self.capacity)];
 		}
@@ -95,6 +101,7 @@ const NSUInteger RACReplaySubjectUnlimitedCapacity = NSUIntegerMax;
 
 - (void)sendCompleted {
 	@synchronized (self) {
+        // 记录 origin signal 已完成
 		self.hasCompleted = YES;
 		[super sendCompleted];
 	}
@@ -102,6 +109,7 @@ const NSUInteger RACReplaySubjectUnlimitedCapacity = NSUIntegerMax;
 
 - (void)sendError:(NSError *)e {
 	@synchronized (self) {
+        // 记录 origin signal 已 error 
 		self.hasError = YES;
 		self.error = e;
 		[super sendError:e];

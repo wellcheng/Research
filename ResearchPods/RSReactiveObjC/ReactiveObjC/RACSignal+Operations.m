@@ -213,6 +213,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}] setNameWithFormat:@"[%@] -throttle: %f valuesPassingTest:", self.name, (double)interval];
 }
 
+// 延迟发送
 - (RACSignal *)delay:(NSTimeInterval)interval {
 	return [[RACSignal createSignal:^(id<RACSubscriber> subscriber) {
 		RACCompoundDisposable *disposable = [RACCompoundDisposable compoundDisposable];
@@ -343,6 +344,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 		setNameWithFormat:@"[%@] -finally:", self.name];
 }
 
+// 在 interval 内，将这些 value 都打包为 tuple
 - (RACSignal *)bufferWithTime:(NSTimeInterval)interval onScheduler:(RACScheduler *)scheduler {
 	NSCParameterAssert(scheduler != nil);
 	NSCParameterAssert(scheduler != RACScheduler.immediateScheduler);
@@ -743,10 +745,12 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}];
 }
 
+// interval timer
 + (RACSignal *)interval:(NSTimeInterval)interval onScheduler:(RACScheduler *)scheduler {
 	return [[RACSignal interval:interval onScheduler:scheduler withLeeway:0.0] setNameWithFormat:@"+interval: %f onScheduler: %@", (double)interval, scheduler];
 }
 
+// interval timer
 + (RACSignal *)interval:(NSTimeInterval)interval onScheduler:(RACScheduler *)scheduler withLeeway:(NSTimeInterval)leeway {
 	NSCParameterAssert(scheduler != nil);
 	NSCParameterAssert(scheduler != RACScheduler.immediateScheduler);
@@ -972,6 +976,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	return [[RACSignalSequence sequenceWithSignal:self] setNameWithFormat:@"[%@] -sequence", self.name];
 }
 
+// 冷信号转化热信号
 - (RACMulticastConnection *)publish {
 	RACSubject *subject = [[RACSubject subject] setNameWithFormat:@"[%@] -publish", self.name];
 	RACMulticastConnection *connection = [self multicast:subject];
@@ -980,6 +985,7 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 
 - (RACMulticastConnection *)multicast:(RACSubject *)subject {
 	[subject setNameWithFormat:@"[%@] -multicast: %@", self.name, subject.name];
+//    使用 connection 包装 origin signal 和 subject
 	RACMulticastConnection *connection = [[RACMulticastConnection alloc] initWithSourceSignal:self subject:subject];
 	return connection;
 }
