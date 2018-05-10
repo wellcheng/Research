@@ -470,12 +470,14 @@ extern const NSInteger RACSignalErrorNoMatchingCase;
 
 /// Every time the receiver sends a new RACSignal, subscribes and sends `next`s and
 /// `error`s only for that signal.
-///
-/// The receiver must be a signal of signals.
+/// 只能被信号的信号调用，调用后，如果 self 发出一个信号，就订阅这个信号，进行降阶，并且只发送这个信号的 error、next values
+/// The receiver must be a signal of signals. 必须是信号的信号
 ///
 /// Returns a signal which passes through `next`s and `error`s from the latest
 /// signal sent by the receiver, and sends `completed` when both the receiver and
 /// the last sent signal complete.
+/// return signal 会传递 之前的 next 和 error ，不过如果有新的信号进来了，之前的信号就被丢掉了，也就是
+/// retuyrn siganl 只 care self 发出的最后一个信号的 value
 - (RACSignal *)switchToLatest RAC_WARN_UNUSED_RESULT;
 
 /// Switches between the signals in `cases` as well as `defaultSignal` based on

@@ -139,7 +139,9 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 	}] setNameWithFormat:@"[%@] -doCompleted:", self.name];
 }
 
-// 限流
+// 限流， 例如文本框的输入，如果输入很快，那么文本框每发生一次变化都发出信号，这个可能会很卡
+// 限流之后，如果文本框变化之后的 interval 里还有变化，也就是处于持续的变化之中，那么就什么都不干
+// 只有变化之后的 interval 里不再变化了，就把值发出来
 - (RACSignal *)throttle:(NSTimeInterval)interval {
 	return [[self throttle:interval valuesPassingTest:^(id _) {
 		return YES;
@@ -825,18 +827,27 @@ static RACDisposable *subscribeForever (RACSignal *signal, void (^next)(id), voi
 
 - (RACSignal *)switchToLatest {
 	return [[RACSignal createSignal:^(id<RACSubscriber> subscriber) {
+        // 先让 self publish ，可以被多个订阅
 		RACMulticastConnection *connection = [self publish];
 
 		RACDisposable *subscriptionDisposable = [[connection.signal
 			flattenMap:^(RACSignal *x) {
+                // 降阶热信号
 				NSCAssert(x == nil || [x isKindOfClass:RACSignal.class], @"-switchToLatest requires that the source signal (%@) send signals. Instead we got: %@", self, x);
 
 				// -concat:[RACSignal never] prevents completion of the receiver from
 				// prematurely terminating the inner signal.
+                // 让 self 发出的 x 信号，一直 take，直到后面的 singal 触发，
+                // 因为增加了 never，，也就是 connection 的 signal concat 了 never
+                // 就算 connection 的 signal 完成了，那么就开始订阅 never，所以 until 的这个 signalTrigger 永远不完成
+                // 这样，当 connection.signal 发送一次 value，x 就不再发送值了
+                //
 				return [x takeUntil:[connection.signal concat:[RACSignal never]]];
 			}]
-			subscribe:subscriber];
+			subscribe:subscriber]; // 让 x 发出的 value 走到 subscriber 上
 
+        // 开始连接，从这里开始，connection 的 source signal ，也就是 self，将被 subject 订阅
+        //
 		RACDisposable *connectionDisposable = [connection connect];
 		return [RACDisposable disposableWithBlock:^{
 			[subscriptionDisposable dispose];
